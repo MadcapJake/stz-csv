@@ -1,0 +1,102 @@
+defpackage csv :
+   import core
+   import collections
+
+defstruct UnclosedQuote <: Exception
+defmethod print (o:OutputStream, e:UnclosedQuote) :
+   print(o, "Unclosed opening quotation")
+
+defstruct UnexpectedCharacter <: Exception : (char:Char)
+defmethod print (o:OutputStream, e:UnexpectedCharacter) :
+   print(o, "Unexpected Character: %~." % [char(e)])
+
+public defstruct CSV :
+   filename: String
+   header: True|False
+   delim: Char
+   newline: Char
+
+defn tail (s:String) -> Char :
+  s[length(s) - 1]
+
+defn to-array<?T> (vec:Vector<?T>) -> Array<T> :
+   val arr = Array<T>(length(vec))
+   for i in 0 to length(vec) do :
+      arr[i] = vec[i]
+   arr
+
+public defn parse (csv:CSV) -> Array<Tuple> :
+   ; println("Parsing...")
+   val file = FileInputStream(filename(csv))
+   val records = Vector<Tuple>()
+   var cur-char:Char|False = get-char(file)
+   var cur-record = Vector<String>()
+
+   while cur-char is Char :
+      ; println("Parse: %_" % [cur-char])
+      switch {cur-char == _} :
+         delim(csv) :
+            cur-char = get-char(file)
+         '"' :
+            val ret-tuple:[String, Char|False] = get-field(csv, file, false)
+            val field = ret-tuple[0] as String
+            cur-char = ret-tuple[1] as Char|False
+            ; println("Field: %_" % [field])
+            add(cur-record, field)
+         newline(csv) :
+            add(records, to-tuple(cur-record))
+            ; println("Current record: %_" % [cur-record])
+            cur-record = Vector<String>()
+            cur-char = get-char(file)
+         else :
+            val ret-tuple = get-field(csv, file, cur-char)
+            val field = ret-tuple[0] as String
+            cur-char = ret-tuple[1] as Char|False
+            ; println(field)
+            add(cur-record, field)
+
+   to-array(records)
+
+defn get-field (csv:CSV, file:FileInputStream, unquoted:Char|False) -> [String, Char|False] :
+   var field:String = ""
+   label<[String, Char|False]> end-of-field :
+      var current:Char|False
+      var next:Char|False
+
+      if unquoted is Char :
+         current = unquoted as Char
+      else :
+         current = get-char(file)
+
+      if unquoted is False :
+         while current is Char :
+            ; println("get-field<quoted>: %_" % [current])
+
+            if current == '"' :
+               next = get-char(file)
+               if next == '"' :
+                  field = append(field, to-string(current))
+               else if next == delim(csv) or next == newline(csv) or next is False :
+                  end-of-field([field, next])
+               else :
+                  throw(UnexpectedCharacter(next as Char))
+            else if current is False :
+               throw(UnclosedQuote())
+            else :
+               field = append(field, to-string(current))
+
+            current = get-char(file)
+         [field, current]
+      else :
+         while current is Char :
+            ; println("get-field: %_" % [current])
+
+            if current == delim(csv) or current == newline(csv) :
+               end-of-field([field, current])
+            else if current == '"' :
+               throw(UnexpectedCharacter(current as Char))
+            else :
+               field = append(field, to-string(current))
+
+            current = get-char(file)
+         [field, current]

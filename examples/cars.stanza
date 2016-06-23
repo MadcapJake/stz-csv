@@ -1,0 +1,11 @@
+defpackage cars :
+   import core
+   import csv
+
+defn main () :
+   val cars = CSV("examples/cars.csv", false, ',', '\n')
+   val data:Array = parse(cars)
+   println(data)
+   ; println(data[0][0])
+
+main()

@@ -1,0 +1,10 @@
+{
+  "cmd": "stanza",
+  "args": ["compile", "examples/cars.stanza", "source/csv.stanza", "-o", "cars"],
+  "cwd": "{PROJECT_PATH}",
+  "sh": true,
+  "name": "L.B. Stanza Compile",
+  "errorMatch": [
+    "(?<file>[\\w\\/\\.\\-]+):(?<line>\\d+)\\.(?<col>\\d+):(?<message>.+)(?: Possibilities are:)?"
+  ]
+}
