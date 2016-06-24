@@ -3,9 +3,10 @@ defpackage cars :
    import csv
 
 defn main () :
-   val cars = CSV("examples/cars.csv", false, ',', '\n')
+   val cars = CSV("examples/cars.csv", true, ',', '\n')
    val data:Array = parse(cars)
    println(data)
+   println(field(cars, data[0] as Tuple, "Description"))
    ; println(data[0][0])
 
 main()

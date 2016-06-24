@@ -12,9 +12,12 @@ defmethod print (o:OutputStream, e:UnexpectedCharacter) :
 
 public defstruct CSV :
    filename: String
-   header: True|False
+   header: HashTable<String,Int>|True|False with: (setter => set-header)
    delim: Char
    newline: Char
+
+public defn field (csv:CSV, t:Tuple, name:String) :
+   t[get(header(csv) as HashTable<String,Int>, name)]
 
 defn to-array<?T> (vec:Vector<?T>) -> Array<T> :
    val arr = Array<T>(length(vec))
@@ -49,7 +52,12 @@ public defn parse (csv:CSV) -> Array<Tuple> :
             cur-field = ret-tuple[0] as String
             cur-char = ret-tuple[1] as Char|False
 
-
+   if header(csv) is True :
+      val hdrs = HashTable<String,Int>()
+      for i in 0 to length(records[0]) do :
+         hdrs[records[0][i]] = i
+      set-header(csv, hdrs)
+      remove(records, 0 to 1)
 
    to-array(records)
 
