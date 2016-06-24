@@ -1,0 +1,13 @@
+defpackage test-t :
+   import core
+   import csv
+
+defn main () :
+   val csv = CSV("/tmp/50k.csv", false, ',')
+   val records = parse(csv)
+   var sum:Int = 0
+   for record in records do :
+      sum = sum + length(record)
+   println(sum)
+
+main()

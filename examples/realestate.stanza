@@ -1,0 +1,13 @@
+defpackage realestate :
+   import core
+   import csv
+
+defn main () :
+   val realestate = CSV("/home/jrusso/Downloads/Sacramentorealestatetransactions.csv", true, ',')
+   val data:Array = parse(realestate)
+   var total:Int = 0
+   for record in data do :
+      total = total + to-int(field(realestate, record, "price"))
+   println(total)
+
+main()

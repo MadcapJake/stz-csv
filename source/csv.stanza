@@ -14,7 +14,6 @@ public defstruct CSV :
    filename: String
    header: HashTable<String,Int>|True|False with: (setter => set-header)
    delim: Char
-   newline: Char
 
 public defn field (csv:CSV, t:Tuple, name:String) :
    t[get(header(csv) as HashTable<String,Int>, name)]
@@ -25,6 +24,9 @@ defn to-array<?T> (vec:Vector<?T>) -> Array<T> :
       arr[i] = vec[i]
    arr
 
+defn crlf (c:Char) -> True|False :
+   c == '\n' or c == '\r'
+
 public defn parse (csv:CSV) -> Array<Tuple> :
    val file = FileInputStream(filename(csv))
    val records = Vector<Tuple>()
@@ -33,24 +35,23 @@ public defn parse (csv:CSV) -> Array<Tuple> :
    var cur-field:String = ""
 
    while cur-char is Char :
-      switch {cur-char == _} :
-         delim(csv) :
-            add(cur-record, cur-field)
-            cur-field = ""
-            cur-char = get-char(file)
-         newline(csv) :
-            add(cur-record, cur-field)
-            add(records, to-tuple(cur-record))
-            cur-char = get-char(file)
-            cur-record = Vector<String>()
-         '"' :
-            val ret-tuple:[String, Char|False] = get-field(csv, file, false)
-            cur-field = ret-tuple[0] as String
-            cur-char = ret-tuple[1] as Char|False
-         else :
-            val ret-tuple:[String, Char|False] = get-field(csv, file, cur-char)
-            cur-field = ret-tuple[0] as String
-            cur-char = ret-tuple[1] as Char|False
+      if cur-char == delim(csv) :
+         add(cur-record, cur-field)
+         cur-field = ""
+         cur-char = get-char(file)
+      else if crlf(cur-char as Char) :
+         add(cur-record, cur-field)
+         add(records, to-tuple(cur-record))
+         cur-char = get-char(file)
+         cur-record = Vector<String>()
+      else if cur-char == '"' :
+         val ret-tuple:[String, Char|False] = get-field(csv, file, false)
+         cur-field = ret-tuple[0] as String
+         cur-char = ret-tuple[1] as Char|False
+      else :
+         val ret-tuple:[String, Char|False] = get-field(csv, file, cur-char)
+         cur-field = ret-tuple[0] as String
+         cur-char = ret-tuple[1] as Char|False
 
    if header(csv) is True :
       val hdrs = HashTable<String,Int>()
@@ -78,7 +79,7 @@ defn get-field (csv:CSV, file:FileInputStream, unquoted:Char|False) -> [String, 
                next = get-char(file)
                if next == '"' :
                   field = append(field, to-string(current))
-               else if next == delim(csv) or next == newline(csv) or next is False :
+               else if next == delim(csv) or crlf(next as Char) or next is False :
                   end-of-field([field, next])
                else :
                   throw(UnexpectedCharacter(next as Char))
@@ -91,7 +92,7 @@ defn get-field (csv:CSV, file:FileInputStream, unquoted:Char|False) -> [String, 
          [field, current]
       else :
          while current is Char :
-            if current == delim(csv) or current == newline(csv) :
+            if current == delim(csv) or crlf(current as Char) :
                end-of-field([field, current])
             else if current == '"' :
                throw(UnexpectedCharacter(current as Char))

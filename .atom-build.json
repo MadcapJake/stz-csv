@@ -1,6 +1,6 @@
 {
   "cmd": "stanza",
-  "args": ["compile", "examples/cars.stanza", "source/csv.stanza", "-o", "cars"],
+  "args": ["compile", "examples/test-t.stanza", "source/csv.stanza", "-o", "test-t"],
   "cwd": "{PROJECT_PATH}",
   "sh": true,
   "name": "L.B. Stanza Compile",
