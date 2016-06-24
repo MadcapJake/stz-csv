@@ -16,9 +16,6 @@ public defstruct CSV :
    delim: Char
    newline: Char
 
-defn tail (s:String) -> Char :
-  s[length(s) - 1]
-
 defn to-array<?T> (vec:Vector<?T>) -> Array<T> :
    val arr = Array<T>(length(vec))
    for i in 0 to length(vec) do :
@@ -26,34 +23,33 @@ defn to-array<?T> (vec:Vector<?T>) -> Array<T> :
    arr
 
 public defn parse (csv:CSV) -> Array<Tuple> :
-   ; println("Parsing...")
    val file = FileInputStream(filename(csv))
    val records = Vector<Tuple>()
    var cur-char:Char|False = get-char(file)
    var cur-record = Vector<String>()
+   var cur-field:String = ""
 
    while cur-char is Char :
-      ; println("Parse: %_" % [cur-char])
       switch {cur-char == _} :
          delim(csv) :
+            add(cur-record, cur-field)
+            cur-field = ""
             cur-char = get-char(file)
+         newline(csv) :
+            add(cur-record, cur-field)
+            add(records, to-tuple(cur-record))
+            cur-char = get-char(file)
+            cur-record = Vector<String>()
          '"' :
             val ret-tuple:[String, Char|False] = get-field(csv, file, false)
-            val field = ret-tuple[0] as String
+            cur-field = ret-tuple[0] as String
             cur-char = ret-tuple[1] as Char|False
-            ; println("Field: %_" % [field])
-            add(cur-record, field)
-         newline(csv) :
-            add(records, to-tuple(cur-record))
-            ; println("Current record: %_" % [cur-record])
-            cur-record = Vector<String>()
-            cur-char = get-char(file)
          else :
-            val ret-tuple = get-field(csv, file, cur-char)
-            val field = ret-tuple[0] as String
+            val ret-tuple:[String, Char|False] = get-field(csv, file, cur-char)
+            cur-field = ret-tuple[0] as String
             cur-char = ret-tuple[1] as Char|False
-            ; println(field)
-            add(cur-record, field)
+
+
 
    to-array(records)
 
@@ -70,8 +66,6 @@ defn get-field (csv:CSV, file:FileInputStream, unquoted:Char|False) -> [String, 
 
       if unquoted is False :
          while current is Char :
-            ; println("get-field<quoted>: %_" % [current])
-
             if current == '"' :
                next = get-char(file)
                if next == '"' :
@@ -89,8 +83,6 @@ defn get-field (csv:CSV, file:FileInputStream, unquoted:Char|False) -> [String, 
          [field, current]
       else :
          while current is Char :
-            ; println("get-field: %_" % [current])
-
             if current == delim(csv) or current == newline(csv) :
                end-of-field([field, current])
             else if current == '"' :
