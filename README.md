@@ -24,3 +24,13 @@ defn main () :
 
 main()
 ```
+
+## Roadmap
+
+* Auto-detect delimiter - try a set of common delimiters and pick the best option
+* Step function - do something to each record as it's parsed.
+* Filter function - conditionally remove records as they are parsed
+* Type conversion - convert to appropriate Stanza type
+* Comments - specify a character indicating a comment to skip in the parsing
+* Linting - provide CSV standard and ambiguity errors/warnings
+* To CSV - convert collections to CSV
